@@ -325,7 +325,7 @@ public class GuestSessionService(
         }
     }
 
-    public async Task CreateGroupOwnerSessionAsync(string userId, string groupReservationId)
+    private async Task<GuestSession> CreateGroupOwnerSessionAsync(string userId, string groupReservationId)
     {
         var session = new GuestSession()
         {
@@ -338,6 +338,7 @@ public class GuestSessionService(
         };
 
         await guestSessionRepository.SaveAsync(session);
+        return session;
     }
 
     public async Task<GetOwnerGuestSessionIdResponse> GetOwnerGuestSessionIdAsync(string userId, string reservationId)
@@ -358,17 +359,7 @@ public class GuestSessionService(
 
         if (ownerSession is null)
         {
-            ownerSession = new GuestSession
-            {
-                Id = Guid.NewGuid().ToString(),
-                GroupReservationId = groupReservation.GroupReservationId,
-                GuestName = "Owner",
-                Dishes = [],
-                IsOwnerSession = true,
-                OwnerUserId = userId
-            };
-
-            await guestSessionRepository.SaveAsync(ownerSession);
+            ownerSession = await CreateGroupOwnerSessionAsync(userId, groupReservation.GroupReservationId);
         }
 
         return new GetOwnerGuestSessionIdResponse(ownerSession.Id);
@@ -408,5 +399,4 @@ public class GuestSessionService(
     }
 
 }
-
 

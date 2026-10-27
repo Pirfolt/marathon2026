@@ -5,7 +5,6 @@ using APIHandler.Helpers;
 using APIHandler.Models.GroupReservation;
 using APIHandler.Services.GroupReservations;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace APIHandler.Handlers.GroupReservations;
@@ -14,8 +13,7 @@ public class SubmitGroupPreOrderHandler(IGroupReservationService groupReservatio
 {
     private static readonly JsonSerializerOptions RequestOptions = new()
     {
-        PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() }
+        PropertyNameCaseInsensitive = true
     };
 
     public async Task<APIGatewayProxyResponse> HandleRequest(APIGatewayProxyRequest request, ILambdaContext context)

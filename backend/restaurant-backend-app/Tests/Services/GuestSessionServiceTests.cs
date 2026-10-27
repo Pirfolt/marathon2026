@@ -76,11 +76,11 @@ public class GuestSessionServiceTests
 
         var result = await _guestSessionService.GetOwnerGuestSessionIdAsync(userId, reservationId);
 
-        Assert.NotNull(createdSession);
-        Assert.Equal(createdSession.Id, result.GuestSessionId);
-        Assert.Equal(groupReservationId, createdSession.GroupReservationId);
-        Assert.Equal(userId, createdSession.OwnerUserId);
-        Assert.True(createdSession.IsOwnerSession);
+        GuestSession savedSession = Assert.IsType<GuestSession>(createdSession);
+        Assert.Equal(savedSession.Id, result.GuestSessionId);
+        Assert.Equal(groupReservationId, savedSession.GroupReservationId);
+        Assert.Equal(userId, savedSession.OwnerUserId);
+        Assert.True(savedSession.IsOwnerSession);
     }
 
     [Theory]
@@ -774,7 +774,6 @@ public class GuestSessionServiceTests
         };
     }
 }
-
 
 
 

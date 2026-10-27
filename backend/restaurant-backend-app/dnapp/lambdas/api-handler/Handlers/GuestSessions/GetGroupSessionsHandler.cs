@@ -3,7 +3,6 @@ using Amazon.Lambda.Core;
 using APIHandler.Exceptions;
 using APIHandler.Helpers;
 using APIHandler.Services.GuestSessions;
-using System;
 using System.Threading.Tasks;
 
 namespace APIHandler.Handlers.GuestSessions;
