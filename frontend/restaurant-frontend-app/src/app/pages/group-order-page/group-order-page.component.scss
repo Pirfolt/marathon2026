@@ -1,0 +1,230 @@
+@use 'app/shared/styles/abstracts/colors' as color;
+
+.group-order-page {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 2rem;
+  color: color.$neutral-900;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: color.$green-600;
+  text-decoration: none;
+}
+
+.page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: color.$bg-green;
+
+  h1,
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h1 {
+    margin-bottom: 0.5rem;
+    color: color.$green-800;
+    font-size: 1.6rem;
+  }
+
+  h2 {
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+  }
+}
+
+.heading-detail {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.5rem !important;
+}
+
+.status-badge {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  background: color.$orange-100;
+  color: color.$neutral-900;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.status-badge--submitted {
+  background: color.$green-150;
+  color: color.$green-800;
+}
+
+.status-badge--closed {
+  background: color.$neutral-200;
+}
+
+.sync-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  min-height: 3.25rem;
+  color: color.$neutral-600;
+  font-size: 0.875rem;
+}
+
+.refresh-button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid color.$green-600;
+  border-radius: 0.35rem;
+  background: color.$neutral-0;
+  color: color.$green-600;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.6;
+  }
+}
+
+.pending-warning {
+  margin: 0.5rem 0 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid color.$orange-600;
+  border-radius: 0.5rem;
+  background: color.$orange-100;
+}
+
+.participants-section {
+  margin-top: 1.5rem;
+}
+
+.section-heading {
+  margin-bottom: 1rem;
+
+  h2,
+  p {
+    margin: 0.25rem 0;
+  }
+}
+
+.participant-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.empty-state {
+  padding: 1rem 0;
+  color: color.$neutral-600;
+}
+
+.submit-section {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: color.$bg-green;
+
+  h2,
+  p {
+    margin: 0.25rem 0;
+  }
+}
+
+.submit-copy {
+  min-width: 0;
+}
+
+.consolidated-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+}
+
+.total-and-submit {
+  display: grid;
+  justify-items: end;
+  gap: 0.75rem;
+  flex: 0 0 auto;
+}
+
+.grand-total {
+  color: color.$green-800;
+  font-size: 1.35rem;
+  white-space: nowrap;
+}
+
+.submit-button {
+  min-width: 17rem;
+}
+
+.submit-button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.state-message {
+  padding: 2rem;
+  text-align: center;
+}
+
+.state-message--error {
+  color: color.$red-400;
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+@media (max-width: 600px) {
+  .group-order-page {
+    padding: 1rem;
+  }
+
+  .page-heading,
+  .submit-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .status-badge {
+    align-self: flex-start;
+  }
+
+  .sync-controls {
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.5rem 0;
+  }
+
+  .total-and-submit {
+    justify-items: stretch;
+  }
+
+  .submit-button {
+    min-width: 0;
+    width: 100%;
+  }
+}

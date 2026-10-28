@@ -1207,6 +1207,23 @@ Response: `200 OK`
 {
   "participants": [
     {
+      "id": "owner-session-id",
+      "type": "Owner",
+      "name": "Owner",
+      "items": [
+        {
+          "dish": {
+            "id": "dish0",
+            "name": "Owner pre-order dish",
+            "price": 120
+          },
+          "quantity": 1
+        }
+      ],
+      "total": 120,
+      "isSubmitted": true
+    },
+    {
       "id": "string",
       "type": "Guest",
       "name": "string",
@@ -1218,16 +1235,16 @@ Response: `200 OK`
             "price": 180
           },
           "quantity": 2
-        },
+        }
       ],
       "total": 360,
       "isSubmitted": true
     }
   ],
-  "total": 360
+  "total": 480
 }
 ```
-Only the reservation owner can view the group session snapshot.
+Only the reservation owner can view the group session snapshot. It includes the owner session and any existing reservation pre-order so the frontend can identify and total the owner's cart alongside guest carts.
 
 ### `DELETE` /guest/groups/{groupReservationId}/sessions/{guestSessionId}
 Response: `200 OK`

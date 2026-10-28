@@ -1,0 +1,93 @@
+@use 'app/shared/styles/abstracts/colors' as color;
+
+:host {
+  display: block;
+}
+
+.participant-card {
+  height: 100%;
+  padding: 1.25rem;
+  border: 1px solid color.$neutral-200;
+  border-radius: 0.75rem;
+  background: color.$neutral-0;
+}
+
+.participant-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.submission-status {
+  margin: 0.4rem 0 0;
+  color: color.$neutral-600;
+  font-size: 0.875rem;
+}
+
+.subtotal {
+  white-space: nowrap;
+}
+
+.dish-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dish-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dish-image,
+.dish-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.dish-image {
+  object-fit: cover;
+}
+
+.dish-placeholder {
+  display: grid;
+  place-items: center;
+  background: color.$green-100;
+  color: color.$green-800;
+  font-weight: 700;
+}
+
+.dish-name {
+  min-width: 0;
+}
+
+.quantity,
+.empty-cart {
+  color: color.$neutral-600;
+}
+
+.empty-cart {
+  margin: 1rem 0;
+}
+
+.remove-button {
+  margin-top: 1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: color.$red-400;
+  cursor: pointer;
+  text-decoration: underline;
+}

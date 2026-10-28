@@ -136,6 +136,14 @@ export class CardReservationComponent {
     );
   });
 
+  readonly canOpenGroupOrder = computed(() => {
+    return (
+      this.role() === Roles.CUSTOMER &&
+      this.r().guestCount >= 2 &&
+      this.r().status === ReservationStatusCustomer.Reserved
+    );
+  });
+
   readonly isAnonymous = computed(() => {
     return !this.r().customerId;
   });
@@ -173,6 +181,11 @@ export class CardReservationComponent {
       queryParams,
     });
   }
+
+  onGroupOrder(): void {
+    void this.router.navigate(['/reservations', this.r().id, 'group-order']);
+  }
+
   onPreOrderWaiter(): void {
     if (this.preOrderItemCount() > 0) {
       this.navigateToWaiterPreOrder();

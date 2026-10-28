@@ -11,6 +11,7 @@ using APIHandler.Repositories.Auth;
 using APIHandler.Repositories.Dishes;
 using APIHandler.Repositories.GroupReservations;
 using APIHandler.Repositories.GuestSessions;
+using APIHandler.Repositories.Orders;
 using APIHandler.Repositories.Reservations;
 using APIHandler.Repositories.Tables;
 using System;
@@ -28,6 +29,7 @@ public class GuestSessionService(
     IGuestSessionRepository guestSessionRepository,
     IDishRepository dishRepository,
     IReservationRepository reservationRepository,
+    IOrderRepository orderRepository,
     IUserRepository userRepository,
     ITableRepository tableRepository) : IGuestSessionService
 {
@@ -176,7 +178,7 @@ public class GuestSessionService(
         await ValidateReservationOwnerAsync(groupReservationId, userId);
 
         var sessions = await guestSessionRepository.GetAllByGroupReservationIdAsync(groupReservationId);
-        return await BuildGroupSessionsResponseAsync(sessions);
+        return await BuildGroupSessionsResponseAsync(userId, groupReservationId, sessions);
     }
 
     public async Task<GetAllSessionsResponse> DeleteGuestSessionAsync(string userId, string groupReservationId, string guestSessionId)
@@ -197,15 +199,29 @@ public class GuestSessionService(
         await guestSessionRepository.DeleteAsync(session);
 
         var sessions = await guestSessionRepository.GetAllByGroupReservationIdAsync(groupReservationId);
-        return await BuildGroupSessionsResponseAsync(sessions);
+        return await BuildGroupSessionsResponseAsync(userId, groupReservationId, sessions);
     }
 
-    private async Task<GetAllSessionsResponse> BuildGroupSessionsResponseAsync(IEnumerable<GuestSession> sessions)
+    private async Task<GetAllSessionsResponse> BuildGroupSessionsResponseAsync(
+        string userId,
+        string groupReservationId,
+        IEnumerable<GuestSession> sessions)
     {
         GuestSession[] guestSessions = sessions.Where(s => !s.IsOwnerSession).ToArray();
+        var ownerSession = sessions.FirstOrDefault(s =>
+            s.IsOwnerSession &&
+            string.Equals(s.OwnerUserId, userId, StringComparison.OrdinalIgnoreCase));
+        ownerSession ??= await CreateGroupOwnerSessionAsync(userId, groupReservationId);
+
+        GroupReservation groupReservation = await groupReservationRepository.GetGroupReservationByIdAsync(groupReservationId)
+            ?? throw new GroupReservationNotFoundException();
+        Order? ownerOrder = await orderRepository.GetOrderByReservationIdAsync(groupReservation.ReservationId);
+
+        var ownerDishes = ownerOrder?.Dishes ?? [];
         var dishIds = guestSessions
             .SelectMany(s => s.Dishes)
             .Select(s => s.DishId)
+            .Concat(ownerDishes.Select(dish => dish.DishId))
             .Distinct()
             .ToArray();
 
@@ -227,6 +243,22 @@ public class GuestSessionService(
             var participant = new Participant(guestSession.Id, ParticipantType.Guest, guestSession.GuestName, items, total, guestSession.IsSubmitted);
             participants.Add(participant);
         }
+
+        var ownerItems = ownerDishes.Select(dish => new OrderItemResponse
+        {
+            Dish = DishMapper.ToDishResponse(dishesById[dish.DishId]),
+            Quantity = dish.Quantity
+        }).ToArray();
+        decimal ownerTotal = ownerItems.Sum(item => item.Quantity * item.Dish.Price);
+        participants.Insert(
+            0,
+            new Participant(
+                ownerSession.Id,
+                ParticipantType.Owner,
+                ownerSession.GuestName,
+                ownerItems,
+                ownerTotal,
+                ownerItems.Length > 0));
 
         return new GetAllSessionsResponse(participants, participants.Sum(p => p.Total));
     }
@@ -399,4 +431,3 @@ public class GuestSessionService(
     }
 
 }
-
