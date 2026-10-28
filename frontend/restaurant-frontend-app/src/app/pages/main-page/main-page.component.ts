@@ -1,4 +1,12 @@
-import { Component, ChangeDetectionStrategy, OnInit, inject, computed } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  OnInit,
+  inject,
+  computed,
+  ElementRef,
+  ViewChild,
+} from '@angular/core';
 import { RouterLink, ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { DishListResponse } from '@app/models/dishes/dish-list-response.model';
@@ -35,6 +43,9 @@ export class MainPageComponent implements OnInit {
   dishes: DishListResponse[] = [];
   locations: LocationResponse[] = [];
 
+  @ViewChild('locationCards')
+  private locationCardsElement?: ElementRef<HTMLDivElement>;
+
   showFeedbackModal = false;
   selectedReservationCustomer!: ReservationCustomer;
   feedbackForUpdate: FeedbackReservationResponseItem | undefined;
@@ -68,6 +79,29 @@ export class MainPageComponent implements OnInit {
     this.router.navigate(['/main']);
   }
 
+  scrollLocations(direction: -1 | 1): void {
+    const track = this.locationCardsElement?.nativeElement;
+    const firstCard = track?.querySelector<HTMLElement>('.location-card');
+    if (!track || !firstCard) {
+      return;
+    }
+
+    const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0;
+    const step = firstCard.getBoundingClientRect().width + gap;
+    const maxScroll = track.scrollWidth - track.clientWidth;
+    const currentPosition = track.scrollLeft;
+    const targetPosition =
+      direction > 0
+        ? currentPosition >= maxScroll - 1
+          ? 0
+          : Math.min(currentPosition + step, maxScroll)
+        : currentPosition <= 1
+          ? maxScroll
+          : Math.max(currentPosition - step, 0);
+
+    track.scrollTo({ left: targetPosition, behavior: 'smooth' });
+  }
+
   ngOnInit(): void {
     this.loadPopularDishes();
     this.loadLocations();
@@ -95,7 +129,7 @@ export class MainPageComponent implements OnInit {
 
   loadLocations(): void {
     this.locationsService.getLocations().subscribe((data) => {
-      this.locations = data.slice(0, 3).map((location) => ({
+      this.locations = data.map((location) => ({
         ...location,
         imageUrl: location.imageUrl || 'assets/img/locations/baratashvili-street-14.jpg',
         address: location.address || 'Unknown Address',

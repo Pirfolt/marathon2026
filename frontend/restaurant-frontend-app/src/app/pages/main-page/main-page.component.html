@@ -40,9 +40,31 @@
 
   <!-- Locations -->
   <div class="locations-section">
-    <h2 class="section-heading">Locations</h2>
+    <div class="locations-heading">
+      <h2 class="section-heading">Locations</h2>
+      @if (locations.length > 1) {
+        <div class="location-carousel-controls">
+          <button
+            type="button"
+            class="location-carousel-button"
+            aria-label="Previous locations"
+            (click)="scrollLocations(-1)"
+          >
+            <img src="assets/svg/arrow-left.svg" alt="" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            class="location-carousel-button"
+            aria-label="Next locations"
+            (click)="scrollLocations(1)"
+          >
+            <img src="assets/svg/arrow-right.svg" alt="" aria-hidden="true" />
+          </button>
+        </div>
+      }
+    </div>
 
-    <div class="location-cards">
+    <div #locationCards class="location-cards">
       @for (location of locations; track location) {
         <app-location-card [location]="location" maxWidth="488px"></app-location-card>
       }
