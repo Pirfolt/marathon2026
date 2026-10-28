@@ -24,3 +24,5 @@ node_modules/
 *.tfvars.json
 crash.log
 crash.*.log
+
+infra/terraform/terraform.exe
