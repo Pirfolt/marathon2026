@@ -19,6 +19,7 @@ import {
   exhaustMap,
   finalize,
   forkJoin,
+  from,
   interval,
   of,
   switchMap,
@@ -29,6 +30,7 @@ import { GroupSessionsResponse } from '@app/models/group-orders/group-sessions-r
 import { GroupStatusResponse } from '@app/models/group-orders/group-status.model';
 import { GuestInvite } from '@app/models/reservations/guest-invite.model';
 import { GroupOrdersService } from '@app/services/group-orders/group-orders.service';
+import { GuestInviteService } from '@app/services/reservation/guest-invite.service';
 import { ToastService } from '@app/services/toast/toast.service';
 import { ModalComponent } from '@app/shared/custom-components/modal/modal.component';
 import { ParticipantCardComponent } from '@app/components/group-orders/participant-card/participant-card.component';
@@ -48,6 +50,7 @@ const REFRESH_INTERVAL_MS = 15_000;
 export class GroupOrderPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly groupOrdersService = inject(GroupOrdersService);
+  private readonly guestInviteService = inject(GuestInviteService);
   private readonly toastService = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private syncSubscription: Subscription | null = null;
@@ -62,6 +65,7 @@ export class GroupOrderPageComponent implements OnInit {
   readonly loadError = signal('');
   readonly deletingSessionId = signal<string | null>(null);
   readonly submitting = signal(false);
+  readonly copyingInviteLink = signal(false);
   readonly refreshing = signal(false);
   readonly refreshError = signal(false);
   readonly updatedAt = signal<Date | null>(null);
@@ -166,6 +170,28 @@ export class GroupOrderPageComponent implements OnInit {
     if (!this.submitting()) {
       this.showSubmitConfirmation.set(false);
     }
+  }
+
+  copyInviteLink(): void {
+    const reservationId = this.reservationId();
+    if (!reservationId || this.copyingInviteLink()) {
+      return;
+    }
+
+    this.copyingInviteLink.set(true);
+    this.guestInviteService
+      .getInviteToken$(reservationId)
+      .pipe(
+        switchMap(({ token }) =>
+          from(navigator.clipboard.writeText(`${window.location.origin}/join/${token}`))
+        ),
+        finalize(() => this.copyingInviteLink.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: () => this.toastService.success('Share it with your friends.', 'Link copied!'),
+        error: () => this.toastService.error('Could not copy the link. Please try again.'),
+      });
   }
 
   confirmSubmit(): void {

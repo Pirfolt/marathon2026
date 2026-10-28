@@ -41,6 +41,32 @@
   }
 }
 
+.heading-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.copy-invite-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+
+  img {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.65;
+  }
+}
+
 .heading-detail {
   display: flex;
   align-items: center;
@@ -211,6 +237,10 @@
 
   .status-badge {
     align-self: flex-start;
+  }
+
+  .heading-actions {
+    align-items: flex-start;
   }
 
   .sync-controls {

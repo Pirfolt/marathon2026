@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { GroupOrdersService } from '@app/services/group-orders/group-orders.service';
+import { GuestInviteService } from '@app/services/reservation/guest-invite.service';
 import { ToastService } from '@app/services/toast/toast.service';
 import { GroupSessionsResponse } from '@app/models/group-orders/group-sessions-response.model';
 import { GuestInvite } from '@app/models/reservations/guest-invite.model';
@@ -58,6 +59,7 @@ function buttonByText(root: ParentNode, text: string): HTMLButtonElement | undef
 
 describe('Рівень 2 · сторінка Owner Review', () => {
   let service: jasmine.SpyObj<GroupOrdersService>;
+  let guestInviteService: jasmine.SpyObj<GuestInviteService>;
 
   function create() {
     TestBed.configureTestingModule({
@@ -68,6 +70,7 @@ describe('Рівень 2 · сторінка Owner Review', () => {
           provide: ToastService,
           useValue: jasmine.createSpyObj('ToastService', ['success', 'error', 'info']),
         },
+        { provide: GuestInviteService, useValue: guestInviteService },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap: convertToParamMap({ reservationId: 'res-1' }) } },
@@ -80,6 +83,10 @@ describe('Рівень 2 · сторінка Owner Review', () => {
   }
 
   beforeEach(() => {
+    guestInviteService = jasmine.createSpyObj<GuestInviteService>('GuestInviteService', [
+      'getInviteToken$',
+    ]);
+    guestInviteService.getInviteToken$.and.returnValue(of({ token: 'guest-token' }));
     service = jasmine.createSpyObj<GroupOrdersService>('GroupOrdersService', [
       'getGroupInvite$',
       'getSessions$',
@@ -93,6 +100,42 @@ describe('Рівень 2 · сторінка Owner Review', () => {
     service.getStatus$.and.returnValue(
       of({ currentParticipants: 3, maxCapacity: 5, status: 'Open' as const })
     );
+  });
+
+  describe('guest invitation link', () => {
+    it('copies the current invite URL and confirms success', async () => {
+      const { fixture, element } = create();
+      const toastService = TestBed.inject(ToastService) as jasmine.SpyObj<ToastService>;
+      const writeText = spyOn(navigator.clipboard, 'writeText').and.resolveTo();
+
+      buttonByText(element, 'Copy guest link')?.click();
+      fixture.detectChanges();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(guestInviteService.getInviteToken$).toHaveBeenCalledOnceWith('res-1');
+      expect(writeText).toHaveBeenCalledOnceWith(
+        `${window.location.origin}/join/guest-token`
+      );
+      expect(toastService.success).toHaveBeenCalledWith(
+        'Share it with your friends.',
+        'Link copied!'
+      );
+    });
+
+    it('shows an error when the invite link cannot be loaded', () => {
+      guestInviteService.getInviteToken$.and.returnValue(
+        throwError(() => new HttpErrorResponse({ status: 500 }))
+      );
+      const { element } = create();
+      const toastService = TestBed.inject(ToastService) as jasmine.SpyObj<ToastService>;
+
+      buttonByText(element, 'Copy guest link')?.click();
+
+      expect(toastService.error).toHaveBeenCalledWith(
+        'Could not copy the link. Please try again.'
+      );
+    });
   });
 
   describe('дані', () => {

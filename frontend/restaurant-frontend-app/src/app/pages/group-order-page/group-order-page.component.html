@@ -30,14 +30,27 @@
           {{ groupStatus()?.currentParticipants ?? 0 }} of {{ invite()!.MaxGuestCount }} guests
         </p>
       </div>
-      <span
-        class="status-badge"
-        [class.status-badge--submitted]="groupStatus()?.status === 'Submitted'"
-        [class.status-badge--closed]="groupStatus()?.status === 'Closed'"
-        role="status"
-      >
-        {{ statusLabel() }}
-      </span>
+      <div class="heading-actions">
+        @if (groupStatus()?.status === 'Open') {
+          <button
+            type="button"
+            class="button button--secondary copy-invite-button"
+            [disabled]="copyingInviteLink()"
+            (click)="copyInviteLink()"
+          >
+            <img src="assets/svg/copy.svg" alt="" aria-hidden="true" />
+            {{ copyingInviteLink() ? 'Copying…' : 'Copy guest link' }}
+          </button>
+        }
+        <span
+          class="status-badge"
+          [class.status-badge--submitted]="groupStatus()?.status === 'Submitted'"
+          [class.status-badge--closed]="groupStatus()?.status === 'Closed'"
+          role="status"
+        >
+          {{ statusLabel() }}
+        </span>
+      </div>
     </header>
 
     @if (groupStatus()?.status === 'Open') {
