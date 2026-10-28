@@ -79,7 +79,18 @@ export class MenuPageComponent implements OnInit {
     const sort = this.selectedSort;
 
     this.dishesService.getDishes(category, sort).subscribe((data) => {
-      this.dishes = data.map((dish) => ({
+      const uniqueDishes = new Map<string, DishListResponse>();
+      for (const dish of data) {
+        const normalizedName = (dish.name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+        const identity = normalizedName
+          ? `${(dish.dishType || '').trim().toLowerCase()}:${normalizedName}`
+          : dish.id;
+        if (!uniqueDishes.has(identity)) {
+          uniqueDishes.set(identity, dish);
+        }
+      }
+
+      this.dishes = [...uniqueDishes.values()].map((dish) => ({
         ...dish,
         imageUrl: dish.imageUrl || 'assets/img/dish.png',
         name: dish.name || 'Unknown Dish',
