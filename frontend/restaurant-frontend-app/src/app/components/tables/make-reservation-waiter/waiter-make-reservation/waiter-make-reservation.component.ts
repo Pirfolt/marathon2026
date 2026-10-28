@@ -112,23 +112,30 @@ export class WaiterMakeReservationComponent implements OnInit {
   private loadLocations() {
     this.locationService.getLocations().subscribe({
       next: (data) => {
-        this.locations = data.map((loc) => ({ id: loc.id, address: loc.address }));
-
         if (this.user) {
-          this.waitersService.getWaiterLocationId(this.user.id).subscribe({
-            next: (locationId) => {
-              const waiterLocation = this.locations.find(
-                (location) => location.id === locationId
-              );
+          this.waitersService.getWaiterLocationIds(this.user.id).subscribe({
+            next: (locationIds) => {
+              const assignedLocationIds = new Set(locationIds);
+              this.locations = data
+                .filter((location) => assignedLocationIds.has(location.id))
+                .map((location) => ({ id: location.id, address: location.address }));
 
-              if (waiterLocation) {
-                this.selectedLocation = waiterLocation.address;
-                this.selectedLocationId = waiterLocation.id;
+              const firstLocation = this.locations[0];
+              if (firstLocation) {
+                this.selectedLocation = firstLocation.address;
+                this.selectedLocationId = firstLocation.id;
                 this.loadTables();
               }
             },
+            error: (error) => {
+              console.error('Failed to load waiter locations', error);
+              this.toast.error('Waiter locations could not be loaded.', 'Reservation');
+            },
           });
+          return;
         }
+
+        this.locations = data.map((loc) => ({ id: loc.id, address: loc.address }));
       },
       error: (err) => console.error('Failed to load locations', err),
     });

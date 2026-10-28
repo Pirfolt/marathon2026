@@ -3,6 +3,7 @@ using APIHandler.Constants;
 using APIHandler.Models.WaiterList;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace APIHandler.Repositories.Waiters;
@@ -10,7 +11,6 @@ namespace APIHandler.Repositories.Waiters;
 public class WaiterRepository : IWaiterRepository
 {
     private readonly string _waitersTableName = ResourceNames.WaiterListTableName;
-    private readonly string _waitersGlobalIndex = ResourceNames.WaitersGlobalIndex;
 
     private readonly IDynamoDBContext _dbContext;
 
@@ -26,11 +26,12 @@ public class WaiterRepository : IWaiterRepository
 
     public async Task<List<WaiterListItem>> GetWaitersByLocationIdAsync(string locationId)
     {
-        var queryConfig = DynamoConfig.QueryConfig(_waitersTableName);
-        queryConfig.IndexName = _waitersGlobalIndex;
-        queryConfig.ConsistentRead = false;
-
-        return await _dbContext.QueryAsync<WaiterListItem>(locationId, queryConfig).GetRemainingAsync();
+        var waiters = await GetAllWaitersAsync();
+        return waiters
+            .Where(waiter =>
+                waiter.LocationId == locationId ||
+                waiter.LocationIds?.Contains(locationId, StringComparer.Ordinal) == true)
+            .ToList();
     }
 
     public async Task<List<WaiterListItem>> GetAllWaitersAsync()

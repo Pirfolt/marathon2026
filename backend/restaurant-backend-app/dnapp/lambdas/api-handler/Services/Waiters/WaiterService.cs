@@ -34,7 +34,21 @@ public class WaiterService : IWaiterService
 
     public async Task AddWaiterToListAsync(UpdateWaiterListRequest request)
     {
-        var location = await GetLocationByIdAsync(request.LocationId);
+        var locationIds = (request.LocationId is null ? [] : new[] { request.LocationId })
+            .Concat(request.LocationIds ?? [])
+            .Where(locationId => !string.IsNullOrWhiteSpace(locationId))
+            .Select(locationId => locationId.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        if (locationIds.Count == 0)
+        {
+            throw new ArgumentException("At least one location ID is required.");
+        }
+
+        foreach (var locationId in locationIds)
+        {
+            await GetLocationByIdAsync(locationId);
+        }
 
         var user = await _userRepository.GetUserByEmailAsync(request.Email);
         var userId = user.UserAttributes.FirstOrDefault(attr => attr.Name == "sub")?.Value;
@@ -42,7 +56,8 @@ public class WaiterService : IWaiterService
         var newItem = new WaiterListItem
         {
             UserId = userId ?? throw new InvalidOperationException($"User ID not found in Cognito user attributes for email '{request.Email}'."),
-            LocationId = request.LocationId,
+            LocationId = locationIds[0],
+            LocationIds = locationIds,
             CreatedAt = DateTime.UtcNow,
         };
 
@@ -164,6 +179,12 @@ public class WaiterService : IWaiterService
 
     public async Task<string?> GetWaiterLocationIdAsync(string waiterId)
     {
+        var locationIds = await GetWaiterLocationIdsAsync(waiterId);
+        return locationIds?.FirstOrDefault();
+    }
+
+    public async Task<List<string>?> GetWaiterLocationIdsAsync(string waiterId)
+    {
         if (string.IsNullOrWhiteSpace(waiterId))
         {
             throw new ArgumentException("Waiter ID cannot be null or empty.", nameof(waiterId));
@@ -171,12 +192,46 @@ public class WaiterService : IWaiterService
 
         var waiter = await _waiterRepository.GetWaiterByIdAsync(waiterId);
 
-        return waiter?.LocationId;
+        if (waiter is null)
+        {
+            return null;
+        }
+
+        return new[] { waiter.LocationId }
+            .Concat(waiter.LocationIds ?? [])
+            .Where(locationId => !string.IsNullOrWhiteSpace(locationId))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
     }
 
     public async Task<List<WaiterListItem>> GetWaitersByLocationIdAsync(string locationId)
     {
         return await _waiterRepository.GetWaitersByLocationIdAsync(locationId);
+    }
+
+    public async Task RemoveLocationFromWaiterAsync(string userId, string locationId)
+    {
+        var waiter = await _waiterRepository.GetWaiterByIdAsync(userId);
+        if (waiter is null)
+        {
+            return;
+        }
+
+        var locationIds = (waiter.LocationIds ?? [])
+            .Append(waiter.LocationId)
+            .Where(id => !string.IsNullOrWhiteSpace(id) && !StringComparer.Ordinal.Equals(id, locationId))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (locationIds.Count == 0)
+        {
+            await RemoveWaiterByIdAsync(userId);
+            return;
+        }
+
+        waiter.LocationId = locationIds[0];
+        waiter.LocationIds = locationIds;
+        await _waiterRepository.SaveWaiterAsync(waiter);
     }
 
     public async Task RemoveWaiterByIdAsync(string userId)

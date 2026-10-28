@@ -57,6 +57,11 @@ interface ReservationCardViewModel {
   availableTableOptionsMap: Map<string, string>;
 }
 
+interface AssignedLocation {
+  id: string;
+  address: string;
+}
+
 const ANY_TABLE_OPTION: SelectOption = {
   text: 'Any Table',
   value: '',
@@ -97,6 +102,7 @@ export class WaiterDashboardComponent implements OnInit {
   readonly reservations = signal<ReservationCustomer[]>([]);
   readonly reservationsLoaded = signal(false);
   readonly tables = signal<Table[]>([]);
+  readonly assignedLocations = signal<AssignedLocation[]>([]);
 
   readonly dateOptions = signal<string[]>([]);
   readonly timeOptions = signal<string[]>([]);
@@ -153,11 +159,11 @@ export class WaiterDashboardComponent implements OnInit {
         reservation,
         selectedTableLabel:
           currentTable != null
-            ? `Table ${currentTable.tableNumber}`
+            ? this.getTableLabel(currentTable, tables)
             : reservation.tableName || 'Table (Unknown)',
-        availableTableOptions: availableTables.map((table) => `Table ${table.tableNumber}`),
+        availableTableOptions: availableTables.map((table) => this.getTableLabel(table, tables)),
         availableTableOptionsMap: new Map(
-          availableTables.map((table) => [`Table ${table.tableNumber}`, table.id])
+          availableTables.map((table) => [this.getTableLabel(table, tables), table.id])
         ),
       };
     });
@@ -174,6 +180,7 @@ export class WaiterDashboardComponent implements OnInit {
 
   readonly assignedLocationId = signal('');
   readonly assignedLocationName = signal('');
+  readonly postponeLocationName = signal('');
 
   readonly showMakeReservationModal = signal(false);
   readonly showPostponeModal = signal(false);
@@ -234,6 +241,21 @@ export class WaiterDashboardComponent implements OnInit {
     });
   }
 
+  private getTableLabel(table: Table, tables: Table[]): string {
+    const hasDuplicateNumber = tables.some(
+    (candidate) =>
+      candidate.id !== table.id && candidate.tableNumber === table.tableNumber
+    );
+    if (!hasDuplicateNumber) {
+    return `Table ${table.tableNumber}`;
+    }
+
+    const location = this.assignedLocations().find(
+    (assignedLocation) => assignedLocation.id === table.locationId
+    );
+    return `Table ${table.tableNumber} - ${location?.address ?? table.locationId}`;
+  }
+
   onOpenMakeReservationModal(): void {
     this.showMakeReservationModal.set(true);
   }
@@ -253,17 +275,24 @@ export class WaiterDashboardComponent implements OnInit {
     );
 
     if (!reservation.waiterId) {
-      this.qrLocationId.set(this.assignedLocationId());
+      this.qrLocationId.set(
+        this.tables().find((table) => table.id === reservation.tableId)?.locationId ??
+          this.assignedLocationId()
+      );
       this.showQr.set(true);
       return;
     }
 
     this.waiterService
-      .getWaiterLocationId(reservation.waiterId)
+      .getWaiterLocationIds(reservation.waiterId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (locationId) => {
-          this.qrLocationId.set(locationId);
+        next: (locationIds) => {
+          this.qrLocationId.set(
+            this.tables().find((table) => table.id === reservation.tableId)?.locationId ??
+              locationIds[0] ??
+              this.assignedLocationId()
+          );
           this.showQr.set(true);
         },
         error: (error) => {
@@ -391,6 +420,10 @@ export class WaiterDashboardComponent implements OnInit {
 
           this.reservationToPostpone.set(reservation);
           this.postponeDate.set(date);
+          this.postponeLocationName.set(
+            this.assignedLocations().find((location) => location.id === knownTable?.locationId)
+              ?.address ?? this.assignedLocationName()
+          );
           this.tableForPostpone.set({
             id: reservation.tableId,
             tableNumber: knownTable?.tableNumber ?? 0,
@@ -524,37 +557,47 @@ export class WaiterDashboardComponent implements OnInit {
 
   private loadAssignedLocation(waiterId: string): void {
     this.waiterService
-      .getWaiterLocationId(waiterId)
+      .getWaiterLocationIds(waiterId)
       .pipe(
-        switchMap((locationId) => {
-          if (!locationId) {
+        switchMap((locationIds) => {
+          if (locationIds.length === 0) {
             throw new Error('The waiter has no assigned location.');
           }
 
-          const filter: TableFilter = {
-            location: locationId,
-            guests: 1,
-            date: null,
-            time: null,
-          };
-
           return forkJoin({
-            location: this.locationsService.getLocationById(locationId),
-            tables: this.tableService.getAvailableTablesWithoutStartTime$(filter),
+            locations: forkJoin(
+              locationIds.map((locationId) => this.locationsService.getLocationById(locationId))
+            ),
+            tables: forkJoin(
+              locationIds.map((locationId) =>
+                this.tableService.getAvailableTablesWithoutStartTime$({
+                  location: locationId,
+                  guests: 1,
+                  date: null,
+                  time: null,
+                } satisfies TableFilter)
+              )
+            ),
           });
         }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
-        next: ({ location, tables }) => {
-          this.assignedLocationId.set(location.id);
-          this.assignedLocationName.set(location.address);
-          this.tables.set(tables);
+        next: ({ locations, tables }) => {
+          const assignedLocations = locations.map((location) => ({
+            id: location.id,
+            address: location.address,
+          }));
+          const allTables = tables.flat();
+          this.assignedLocations.set(assignedLocations);
+          this.assignedLocationId.set(assignedLocations[0].id);
+          this.assignedLocationName.set(assignedLocations[0].address);
+          this.tables.set(allTables);
 
           this.tableOptions.set([
             ANY_TABLE_OPTION,
-            ...tables.map((table) => ({
-              text: `Table ${table.tableNumber}`,
+            ...allTables.map((table) => ({
+              text: this.getTableLabel(table, allTables),
               value: table.id,
             })),
           ]);

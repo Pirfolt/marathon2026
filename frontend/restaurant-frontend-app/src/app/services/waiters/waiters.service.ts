@@ -5,6 +5,7 @@ import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
 
 interface WaiterLocationResponse {
   locationId: string;
+  locationIds?: string[];
 }
 
 @Injectable({
@@ -18,5 +19,11 @@ export class WaitersService {
     return this.http
       .get<WaiterLocationResponse>(`${this.baseUrl}/waiters/${waiterId}/location`)
       .pipe(map((response) => response.locationId));
+  }
+
+  getWaiterLocationIds(waiterId: string): Observable<string[]> {
+    return this.http
+      .get<WaiterLocationResponse>(`${this.baseUrl}/waiters/${waiterId}/location`)
+      .pipe(map((response) => response.locationIds ?? [response.locationId]));
   }
 }

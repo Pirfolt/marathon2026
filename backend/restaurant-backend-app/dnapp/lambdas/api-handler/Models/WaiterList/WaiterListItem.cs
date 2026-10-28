@@ -14,6 +14,9 @@ public class WaiterListItem
     [DynamoDBGlobalSecondaryIndexHashKey(GlobalSecondaryIndexes.Waiters.LocationId)]
     public required string LocationId { get; set; }
 
+    [DynamoDBProperty("locationIds")]
+    public List<string>? LocationIds { get; set; }
+
     [DynamoDBProperty("createdAt")]
     public DateTime CreatedAt { get; set; }
 

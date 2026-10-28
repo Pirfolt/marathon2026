@@ -95,7 +95,7 @@
 
 @if (showPostponeModal()) {
   <app-time-slots-modal
-    [locationName]="assignedLocationName()"
+    [locationName]="postponeLocationName()"
     [table]="tableForPostpone()!"
     [date]="postponeDate()"
     (closeModal)="closePostponeModal()"

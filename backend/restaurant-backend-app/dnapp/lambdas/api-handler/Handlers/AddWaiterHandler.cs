@@ -31,9 +31,19 @@ public class AddWaiterHandler : IApiRequestHandler
         try
         {
             PersonalDataValidator.ValidateEmail(waiterListRequest.Email);
+            if (string.IsNullOrWhiteSpace(waiterListRequest.LocationId) &&
+                (waiterListRequest.LocationIds == null || waiterListRequest.LocationIds.Count == 0))
+            {
+                return ResponseBuilder.CreateErrorResponse(400, "At least one location ID is required", context.Logger);
+            }
+
             return await HandlePostRequest(waiterListRequest, context);
         }
         catch (ValidationException ex)
+        {
+            return ResponseBuilder.CreateErrorResponse(400, ex.Message, context.Logger);
+        }
+        catch (ArgumentException ex)
         {
             return ResponseBuilder.CreateErrorResponse(400, ex.Message, context.Logger);
         }

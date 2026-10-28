@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace APIHandler.Models.WaiterList;
@@ -8,5 +9,8 @@ public class UpdateWaiterListRequest
     public required string Email { get; set; }
 
     [JsonPropertyName("locationId")]
-    public required string LocationId { get; set; }
+    public string? LocationId { get; set; }
+
+    [JsonPropertyName("locationIds")]
+    public List<string>? LocationIds { get; set; }
 }

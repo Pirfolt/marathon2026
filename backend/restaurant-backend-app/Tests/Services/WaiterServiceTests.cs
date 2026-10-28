@@ -57,6 +57,34 @@ public class WaiterServiceTests
         _mockUserRepository.Verify(r => r.AddUserToGroupAsync(request.Email, Roles.Waiter.ToString()), Times.Once);
     }
 
+    [Theory]
+    [AutoData]
+    public async Task AddWaiterToListAsync_ShouldSaveAllAssignedLocations(Location firstLocation, Location secondLocation)
+    {
+        firstLocation.Id = "loc-1";
+        secondLocation.Id = "loc-2";
+        var request = new UpdateWaiterListRequest
+        {
+            Email = "test@test.com",
+            LocationId = "loc-1",
+            LocationIds = ["loc-1", "loc-2"],
+        };
+        var userResponse = new AdminGetUserResponse
+        {
+            UserAttributes = [new AttributeType { Name = "sub", Value = "user-1" }],
+        };
+
+        _mockLocationRepository.Setup(r => r.GetLocationByIdAsync("loc-1")).ReturnsAsync(firstLocation);
+        _mockLocationRepository.Setup(r => r.GetLocationByIdAsync("loc-2")).ReturnsAsync(secondLocation);
+        _mockUserRepository.Setup(r => r.GetUserByEmailAsync(request.Email)).ReturnsAsync(userResponse);
+
+        await _waiterService.AddWaiterToListAsync(request);
+
+        _mockWaiterRepository.Verify(r => r.SaveWaiterAsync(It.Is<WaiterListItem>(waiter =>
+            waiter.LocationId == "loc-1" &&
+            waiter.LocationIds!.SequenceEqual(new[] { "loc-1", "loc-2" }))), Times.Once);
+    }
+
     [Fact]
     public async Task AddWaiterToListAsync_ShouldThrowArgumentException_WhenLocationNotFound()
     {
@@ -284,6 +312,52 @@ public class WaiterServiceTests
         var result = await _waiterService.GetWaiterLocationIdAsync(waiterId);
 
         Assert.Equal("loc-1", result);
+    }
+
+    [Fact]
+    public async Task GetWaiterLocationIdsAsync_ShouldIncludeLegacyPrimaryLocation()
+    {
+        var waiter = new WaiterListItem
+        {
+            UserId = "waiter-1",
+            LocationId = "loc-1",
+            LocationIds = ["loc-2"],
+        };
+        _mockWaiterRepository.Setup(r => r.GetWaiterByIdAsync("waiter-1")).ReturnsAsync(waiter);
+
+        var result = await _waiterService.GetWaiterLocationIdsAsync("waiter-1");
+
+        Assert.Equal(new[] { "loc-1", "loc-2" }, result);
+    }
+
+    [Fact]
+    public async Task RemoveLocationFromWaiterAsync_ShouldKeepWaiterAssignedToRemainingLocations()
+    {
+        var waiter = new WaiterListItem
+        {
+            UserId = "waiter-1",
+            LocationId = "loc-1",
+            LocationIds = ["loc-1", "loc-2"],
+        };
+        _mockWaiterRepository.Setup(r => r.GetWaiterByIdAsync("waiter-1")).ReturnsAsync(waiter);
+
+        await _waiterService.RemoveLocationFromWaiterAsync("waiter-1", "loc-1");
+
+        Assert.Equal("loc-2", waiter.LocationId);
+        Assert.Equal(new[] { "loc-2" }, waiter.LocationIds);
+        _mockWaiterRepository.Verify(r => r.SaveWaiterAsync(waiter), Times.Once);
+        _mockWaiterRepository.Verify(r => r.DeleteWaiterAsync(It.IsAny<WaiterListItem>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RemoveLocationFromWaiterAsync_ShouldRemoveWaiter_WhenNoLocationsRemain()
+    {
+        var waiter = new WaiterListItem { UserId = "waiter-1", LocationId = "loc-1" };
+        _mockWaiterRepository.Setup(r => r.GetWaiterByIdAsync("waiter-1")).ReturnsAsync(waiter);
+
+        await _waiterService.RemoveLocationFromWaiterAsync("waiter-1", "loc-1");
+
+        _mockWaiterRepository.Verify(r => r.DeleteWaiterAsync(waiter), Times.Once);
     }
 
     [Fact]

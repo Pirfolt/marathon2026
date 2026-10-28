@@ -23,13 +23,17 @@ public class GetWaiterLocationHandler : IApiRequestHandler
             return ResponseBuilder.CreateErrorResponse(400, "Missing or invalid waiterId in path parameters", context.Logger);
         }
 
-        var locationId = await _waiterService.GetWaiterLocationIdAsync(waiterId);
+        var locationIds = await _waiterService.GetWaiterLocationIdsAsync(waiterId);
 
-        if (locationId == null)
+        if (locationIds == null || locationIds.Count == 0)
         {
             return ResponseBuilder.CreateErrorResponse(404, $"No location found for waiter with ID {waiterId}", context.Logger);
         }
 
-        return ResponseBuilder.CreateSuccessResponse(new { locationId });
+        return ResponseBuilder.CreateSuccessResponse(new
+        {
+            locationId = locationIds[0],
+            locationIds,
+        });
     }
 }

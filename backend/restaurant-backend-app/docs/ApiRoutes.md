@@ -241,9 +241,12 @@ Request body:
 ```json
 {
   "email": "waiter@example.com",
-  "locationId": "string"
+  "locationId": "location-id",
+  "locationIds": ["location-id", "another-location-id"]
 }
 ```
+
+`locationId` remains the primary location for older clients. `locationIds` can assign the waiter to multiple locations; at least one of the fields must contain a location ID.
 
 Response: `200 OK`
 ```json
@@ -256,7 +259,8 @@ Response: `200 OK`
 Response: `200 OK`
 ```json
 {
-  "locationId": "string"
+  "locationId": "location-id",
+  "locationIds": ["location-id", "another-location-id"]
 }
 ```
 

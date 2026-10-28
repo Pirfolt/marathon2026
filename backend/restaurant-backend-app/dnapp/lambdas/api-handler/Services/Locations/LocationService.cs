@@ -133,7 +133,7 @@ public class LocationService : ILocationService
             {
                 foreach (var waiter in waiters)
                 {
-                    await _waiterService.RemoveWaiterByIdAsync(waiter.UserId);
+                    await _waiterService.RemoveLocationFromWaiterAsync(waiter.UserId, locationId);
                 }
             }
         }

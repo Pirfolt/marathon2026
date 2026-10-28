@@ -18,7 +18,11 @@ public interface IWaiterService
 
     Task<string?> GetWaiterLocationIdAsync(string waiterId);
 
+    Task<List<string>?> GetWaiterLocationIdsAsync(string waiterId);
+
     Task<List<WaiterListItem>> GetWaitersByLocationIdAsync(string locationId);
+
+    Task RemoveLocationFromWaiterAsync(string userId, string locationId);
 
     Task<WaiterListItem?> GetWaiterByReservationIdAsync(string reservationId);
 

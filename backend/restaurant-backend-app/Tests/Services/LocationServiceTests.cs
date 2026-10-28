@@ -158,7 +158,7 @@ public class LocationServiceTests
 
         foreach (var waiter in waiters)
         {
-            _mockWaiterService.Verify(s => s.RemoveWaiterByIdAsync(waiter.UserId), Times.Once);
+            _mockWaiterService.Verify(s => s.RemoveLocationFromWaiterAsync(waiter.UserId, locationId), Times.Once);
         }
 
         _mockLocationRepository.Verify(r => r.DeleteLocationAsync(location), Times.Once);
