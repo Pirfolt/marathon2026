@@ -12,6 +12,11 @@ Thumbs.db
 # Node
 node_modules/
 
+# Python
+**/syndicate_venv/
+__pycache__/
+*.py[cod]
+
 # Local env
 .env
 .env.local

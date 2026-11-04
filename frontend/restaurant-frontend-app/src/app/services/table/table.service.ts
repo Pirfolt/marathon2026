@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
 import { HttpClient } from '@angular/common/http';
-import { Table } from '@app/models/tables/table.model';
+import { Table, TableSummary } from '@app/models/tables/table.model';
 import { catchError, from, map, mergeMap, Observable, of, switchMap, toArray } from 'rxjs';
 import { TableFilter } from '@app/models/tables/table-filter.model';
 import { revertFormatTime } from '@app/shared/helpers/date-helpers';
@@ -77,6 +77,12 @@ export class TableService {
     };
 
     return this.http.get<Table[]>(url, { params });
+  }
+
+  getAllTablesForLocation$(locationId: string): Observable<TableSummary[]> {
+    return this.http.get<TableSummary[]>(
+      `${this.baseUrl}/locations/${encodeURIComponent(locationId)}/tables/all`
+    );
   }
 
   changeReservationTable$(reservationId: string, tableId: string): Observable<ReservationCustomer> {

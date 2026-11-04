@@ -7,3 +7,5 @@ export interface Table {
   capacity: number;
   timeRanges: TimeRange[];
 }
+
+export type TableSummary = Pick<Table, 'id' | 'tableNumber' | 'locationId' | 'capacity'>;

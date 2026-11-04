@@ -3,7 +3,8 @@ import {
   EventEmitter,
   OnInit,
   Output,
-  ChangeDetectionStrategy, inject,
+  ChangeDetectionStrategy,
+  inject,
 } from '@angular/core';
 import { CustomButtonComponent } from '@app/shared/custom-components/custom-button/custom-button.component';
 import { CustomSelectComponent } from '@app/shared/custom-components/custom-select/custom-select.component';
@@ -20,24 +21,12 @@ import { TableService } from '@app/services/table/table.service';
 import { TableFilter } from '@app/models/tables/table-filter.model';
 import { UsersService } from '@app/services/users/users.service';
 import { FormsModule } from '@angular/forms';
-import {
-  catchError,
-  debounceTime,
-  distinctUntilChanged,
-  of,
-  Subject,
-  switchMap,
-} from 'rxjs';
-import {ToastService} from '@app/services/toast/toast.service';
+import { catchError, debounceTime, distinctUntilChanged, of, Subject, switchMap } from 'rxjs';
+import { ToastService } from '@app/services/toast/toast.service';
 
 @Component({
   selector: 'app-waiter-make-reservation',
-  imports: [
-    FormsModule,
-    CustomButtonComponent,
-    CustomSelectComponent,
-    CustomNumberComponent,
-  ],
+  imports: [FormsModule, CustomButtonComponent, CustomSelectComponent, CustomNumberComponent],
   templateUrl: './waiter-make-reservation.component.html',
   styleUrl: './waiter-make-reservation.component.scss',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -86,7 +75,6 @@ export class WaiterMakeReservationComponent implements OnInit {
   private readonly authenticationService = inject(AuthenticationService);
   private readonly tableService = inject(TableService);
   private readonly usersService = inject(UsersService);
-
 
   ngOnInit(): void {
     this.user = this.authenticationService.getUser();
@@ -211,9 +199,7 @@ export class WaiterMakeReservationComponent implements OnInit {
   onTableChange(tableName: string): void {
     const tableNumber = tableName.replace('Table ', '');
 
-    const table = this.tables.find(
-      (item) => item.tableNumber.toString() === tableNumber
-    );
+    const table = this.tables.find((item) => item.tableNumber.toString() === tableNumber);
 
     if (!table) {
       return;

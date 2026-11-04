@@ -18,9 +18,12 @@ describe('TableCardComponent', () => {
     timeRanges: hours.map((hour) => ({ start: slotStart(hour), end: slotEnd(hour) })),
   });
 
-  const render = (table: Table): void => {
+  const render = (table: Table, imageUrl?: string): void => {
     fixture.componentRef.setInput('table', table);
     fixture.componentRef.setInput('location', '48 Rustaveli Avenue');
+    if (imageUrl) {
+      fixture.componentRef.setInput('imageUrl', imageUrl);
+    }
     fixture.componentRef.setInput('date', 'Oct 17, 2026');
     fixture.detectChanges();
   };
@@ -45,6 +48,14 @@ describe('TableCardComponent', () => {
     expect(labels[0]).toBe('10:00');
     expect(labels[1]).toBe('10:30');
     expect(labels[23]).toBe('21:30');
+  });
+
+  it('renders the location image when provided', () => {
+    render(buildTable([]), 'https://example.com/rustaveli.jpg');
+
+    const image: HTMLImageElement = fixture.nativeElement.querySelector('.image-wrapper');
+
+    expect(image.src).toBe('https://example.com/rustaveli.jpg');
   });
 
   it('disables half-hours without an available time range', () => {

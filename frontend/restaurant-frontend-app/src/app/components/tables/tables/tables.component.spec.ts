@@ -343,6 +343,36 @@ describe('ReservationsPageComponent', () => {
     });
   });
 
+  describe('location images', () => {
+    const table: Table = {
+      id: 'table-1',
+      tableNumber: 1,
+      locationId: 'loc-1',
+      capacity: 4,
+      timeRanges: [],
+    };
+
+    beforeEach(() => {
+      component.locations = [
+        {
+          id: 'loc-1',
+          address: '48 Rustaveli Avenue',
+          imageUrl: 'https://example.com/rustaveli.jpg',
+        } as LocationResponse,
+      ];
+    });
+
+    it('uses the table location image for reservation results', () => {
+      expect(component.getLocationImageUrl(table)).toBe('https://example.com/rustaveli.jpg');
+    });
+
+    it('falls back to the default table image when the location has no image', () => {
+      component.locations[0].imageUrl = '';
+
+      expect(component.getLocationImageUrl(table)).toBe('assets/img/table-card-image.jpg');
+    });
+  });
+
   describe('selectedLocationName', () => {
     const table: Table = {
       id: 'table-1',

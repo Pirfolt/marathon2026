@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { TableService } from './table.service';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
-import { Table } from '@app/models/tables/table.model';
+import { Table, TableSummary } from '@app/models/tables/table.model';
 import { TableFilter } from '@app/models/tables/table-filter.model';
 import { TimeRange } from '@app/models/tables/time-range.model';
 
@@ -36,7 +36,9 @@ describe('TableService', () => {
       .getAvailableTables$({ location: 'loc-1', date: 'Oct 17, 2026', time: '10:00', guests: 2 })
       .subscribe();
 
-    const req = httpMock.expectOne((request) => request.url === 'https://test.api/available-tables');
+    const req = httpMock.expectOne(
+      (request) => request.url === 'https://test.api/available-tables'
+    );
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('locationId')).toBe('loc-1');
     expect(req.request.params.get('capacity')).toBe('2');
@@ -48,10 +50,26 @@ describe('TableService', () => {
       .getAvailableTables$({ location: null, date: 'Oct 17, 2026', time: '10:00', guests: 2 })
       .subscribe();
 
-    const req = httpMock.expectOne((request) => request.url === 'https://test.api/available-tables');
+    const req = httpMock.expectOne(
+      (request) => request.url === 'https://test.api/available-tables'
+    );
     expect(req.request.params.has('locationId')).toBeFalse();
     expect(req.request.params.get('capacity')).toBe('2');
     req.flush([]);
+  });
+
+  it('loads all tables for a location including tables with existing reservations', () => {
+    let result: TableSummary[] | undefined;
+    service.getAllTablesForLocation$('loc-1').subscribe((tables) => (result = tables));
+
+    const request = httpMock.expectOne('https://test.api/locations/loc-1/tables/all');
+    expect(request.request.method).toBe('GET');
+    request.flush([
+      { id: 'table-1', locationId: 'loc-1', capacity: 4, tableNumber: 1 },
+      { id: 'table-2', locationId: 'loc-1', capacity: 4, tableNumber: 2 },
+    ]);
+
+    expect(result?.map((table) => table.id)).toEqual(['table-1', 'table-2']);
   });
 
   describe('getAvailableTablesWithTimeSlots$', () => {
@@ -120,7 +138,9 @@ describe('TableService', () => {
       expect(firstBatch.length).toBe(6);
       firstBatch.forEach((request) => request.flush([]));
 
-      const secondBatch = httpMock.match((request) => request.url.endsWith('/available-time-slots'));
+      const secondBatch = httpMock.match((request) =>
+        request.url.endsWith('/available-time-slots')
+      );
       expect(secondBatch.length).toBe(4);
       secondBatch.forEach((request) => request.flush([]));
     });

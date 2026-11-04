@@ -23,8 +23,9 @@ import {
 } from '@app/models/reservations/reservation.model';
 import { SelectOption } from '@app/models/shared/select-option.model';
 import { TableFilter } from '@app/models/tables/table-filter.model';
-import { Table } from '@app/models/tables/table.model';
+import { Table, TableSummary } from '@app/models/tables/table.model';
 import { TimeRange } from '@app/models/tables/time-range.model';
+import { LocationsService } from '@app/services/locations/locations.service';
 import { PreOrdersService } from '@app/services/pre-orders/pre-orders.service';
 import { ReservationService } from '@app/services/reservation/reservation.service';
 import { TableService } from '@app/services/table/table.service';
@@ -42,7 +43,6 @@ import {
 } from '@app/shared/helpers/date-helpers';
 
 import { FeedbackQrModalComponent } from './feedback-qr-modal/feedback-qr-modal.component';
-import {LocationsService} from '@app/services/locations/locations.service';
 
 interface ReservationFilters {
   date: string;
@@ -81,7 +81,7 @@ const ANY_TABLE_OPTION: SelectOption = {
   templateUrl: './waiter-dashboard.component.html',
   styleUrl: './waiter-dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true
+  standalone: true,
 })
 export class WaiterDashboardComponent implements OnInit {
   private readonly authService = inject(AuthenticationService);
@@ -102,6 +102,7 @@ export class WaiterDashboardComponent implements OnInit {
   readonly reservations = signal<ReservationCustomer[]>([]);
   readonly reservationsLoaded = signal(false);
   readonly tables = signal<Table[]>([]);
+  readonly assignedTables = signal<TableSummary[]>([]);
   readonly assignedLocations = signal<AssignedLocation[]>([]);
 
   readonly dateOptions = signal<string[]>([]);
@@ -150,10 +151,11 @@ export class WaiterDashboardComponent implements OnInit {
 
   readonly reservationCards = computed<ReservationCardViewModel[]>(() => {
     const tables = this.tables();
+    const assignedTables = this.assignedTables();
 
     return this.filteredReservations().map((reservation) => {
       const availableTables = tables.filter((table) => table.id !== reservation.tableId);
-      const currentTable = tables.find((table) => table.id === reservation.tableId);
+      const currentTable = assignedTables.find((table) => table.id === reservation.tableId);
 
       return {
         reservation,
@@ -161,9 +163,11 @@ export class WaiterDashboardComponent implements OnInit {
           currentTable != null
             ? this.getTableLabel(currentTable, tables)
             : reservation.tableName || 'Table (Unknown)',
-        availableTableOptions: availableTables.map((table) => this.getTableLabel(table, tables)),
+        availableTableOptions: availableTables.map((table) =>
+          this.getTableLabel(table, assignedTables)
+        ),
         availableTableOptionsMap: new Map(
-          availableTables.map((table) => [this.getTableLabel(table, tables), table.id])
+          availableTables.map((table) => [this.getTableLabel(table, assignedTables), table.id])
         ),
       };
     });
@@ -241,17 +245,16 @@ export class WaiterDashboardComponent implements OnInit {
     });
   }
 
-  private getTableLabel(table: Table, tables: Table[]): string {
+  private getTableLabel(table: TableSummary, tables: TableSummary[]): string {
     const hasDuplicateNumber = tables.some(
-    (candidate) =>
-      candidate.id !== table.id && candidate.tableNumber === table.tableNumber
+      (candidate) => candidate.id !== table.id && candidate.tableNumber === table.tableNumber
     );
     if (!hasDuplicateNumber) {
-    return `Table ${table.tableNumber}`;
+      return `Table ${table.tableNumber}`;
     }
 
     const location = this.assignedLocations().find(
-    (assignedLocation) => assignedLocation.id === table.locationId
+      (assignedLocation) => assignedLocation.id === table.locationId
     );
     return `Table ${table.tableNumber} - ${location?.address ?? table.locationId}`;
   }
@@ -276,7 +279,7 @@ export class WaiterDashboardComponent implements OnInit {
 
     if (!reservation.waiterId) {
       this.qrLocationId.set(
-        this.tables().find((table) => table.id === reservation.tableId)?.locationId ??
+        this.assignedTables().find((table) => table.id === reservation.tableId)?.locationId ??
           this.assignedLocationId()
       );
       this.showQr.set(true);
@@ -289,7 +292,7 @@ export class WaiterDashboardComponent implements OnInit {
       .subscribe({
         next: (locationIds) => {
           this.qrLocationId.set(
-            this.tables().find((table) => table.id === reservation.tableId)?.locationId ??
+            this.assignedTables().find((table) => table.id === reservation.tableId)?.locationId ??
               locationIds[0] ??
               this.assignedLocationId()
           );
@@ -297,10 +300,7 @@ export class WaiterDashboardComponent implements OnInit {
         },
         error: (error) => {
           console.error('Could not load waiter location:', error);
-          this.toast.error(
-            'Could not create the feedback QR code.',
-            'Feedback'
-          );
+          this.toast.error('Could not create the feedback QR code.', 'Feedback');
         },
       });
   }
@@ -416,7 +416,9 @@ export class WaiterDashboardComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (timeRanges) => {
-          const knownTable = this.tables().find((table) => table.id === reservation.tableId);
+          const knownTable = this.assignedTables().find(
+            (table) => table.id === reservation.tableId
+          );
 
           this.reservationToPostpone.set(reservation);
           this.postponeDate.set(date);
@@ -495,8 +497,8 @@ export class WaiterDashboardComponent implements OnInit {
           reservations.length === 0
             ? of([] as ReservationCustomer[])
             : forkJoin(
-              reservations.map((reservation) => this.enrichReservation(reservation, waiterName))
-            )
+                reservations.map((reservation) => this.enrichReservation(reservation, waiterName))
+              )
         ),
         takeUntilDestroyed(this.destroyRef)
       )
@@ -527,9 +529,9 @@ export class WaiterDashboardComponent implements OnInit {
 
     const creator$ = reservation.customerId
       ? this.usersService.getUserName(reservation.customerId).pipe(
-        map((name) => ({ name, role: 'Customer' as const })),
-        catchError(() => of({ name: 'Unknown customer', role: 'Customer' as const }))
-      )
+          map((name) => ({ name, role: 'Customer' as const })),
+          catchError(() => of({ name: 'Unknown customer', role: 'Customer' as const }))
+        )
       : of({ name: waiterName, role: 'Waiter' as const });
 
     const preOrder$ = this.ordersService.getByReservationId(reservation.id).pipe(
@@ -578,36 +580,40 @@ export class WaiterDashboardComponent implements OnInit {
                 } satisfies TableFilter)
               )
             ),
+            assignedTables: forkJoin(
+              locationIds.map((locationId) =>
+                this.tableService.getAllTablesForLocation$(locationId)
+              )
+            ),
           });
         }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
-        next: ({ locations, tables }) => {
+        next: ({ locations, tables, assignedTables }) => {
           const assignedLocations = locations.map((location) => ({
             id: location.id,
             address: location.address,
           }));
           const allTables = tables.flat();
+          const allAssignedTables = assignedTables.flat();
           this.assignedLocations.set(assignedLocations);
           this.assignedLocationId.set(assignedLocations[0].id);
           this.assignedLocationName.set(assignedLocations[0].address);
           this.tables.set(allTables);
+          this.assignedTables.set(allAssignedTables);
 
           this.tableOptions.set([
             ANY_TABLE_OPTION,
             ...allTables.map((table) => ({
-              text: this.getTableLabel(table, allTables),
+              text: this.getTableLabel(table, allAssignedTables),
               value: table.id,
             })),
           ]);
         },
         error: (error: unknown) => {
           console.error('Failed to load waiter location or tables:', error);
-          this.toast.error(
-            'The waiter location or tables could not be loaded.',
-            'Tables'
-          );
+          this.toast.error('The waiter location or tables could not be loaded.', 'Tables');
         },
       });
   }

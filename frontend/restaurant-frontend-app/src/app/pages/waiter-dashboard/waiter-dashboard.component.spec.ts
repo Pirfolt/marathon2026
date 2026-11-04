@@ -9,10 +9,7 @@ describe('WaiterDashboardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [
-        { provide: API_BASE_URL, useValue: 'https://test.api' },
-        provideRouter([]),
-      ],
+      providers: [{ provide: API_BASE_URL, useValue: 'https://test.api' }, provideRouter([])],
       imports: [WaiterDashboardComponent],
     }).compileComponents();
 

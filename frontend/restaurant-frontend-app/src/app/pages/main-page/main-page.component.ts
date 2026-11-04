@@ -117,7 +117,19 @@ export class MainPageComponent implements OnInit {
 
   loadPopularDishes(): void {
     this.dishesService.getPopularDishes().subscribe((data) => {
-      this.dishes = data.slice(0, 4).map((dish) => ({
+      const seenNames = new Set<string>();
+      const uniqueDishes = data.filter((dish) => {
+        const name = dish.name?.trim() || 'Unknown Dish';
+        const normalizedName = name.toLowerCase();
+        if (seenNames.has(normalizedName)) {
+          return false;
+        }
+
+        seenNames.add(normalizedName);
+        return true;
+      });
+
+      this.dishes = uniqueDishes.slice(0, 4).map((dish) => ({
         ...dish,
         imageUrl: dish.imageUrl || 'assets/img/dish.png',
         name: dish.name || 'Unknown Dish',

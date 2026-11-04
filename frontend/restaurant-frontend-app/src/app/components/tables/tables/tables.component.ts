@@ -35,6 +35,7 @@ import { ToastService } from '@app/services/toast/toast.service';
 
 const UNKNOWN_LOCATION_LABEL = 'Location unavailable';
 const ALL_LOCATIONS_LABEL = 'All Locations';
+const TABLE_CARD_IMAGE_FALLBACK = 'assets/img/table-card-image.jpg';
 const RESERVATION_OVERLAP_MESSAGE =
   "This table isn't free for the whole selected time. Please choose a shorter stay or another slot.";
 const RESERVATION_FAILED_MESSAGE = 'Could not create the reservation. Please try again.';
@@ -140,6 +141,13 @@ export class TablesComponent implements OnInit {
       this.locations.find((location) => location.id === table.locationId)?.address ??
       this.lastAppliedFilter?.location ??
       UNKNOWN_LOCATION_LABEL
+    );
+  }
+
+  getLocationImageUrl(table: Table): string {
+    return (
+      this.locations.find((location) => location.id === table.locationId)?.imageUrl ||
+      TABLE_CARD_IMAGE_FALLBACK
     );
   }
 

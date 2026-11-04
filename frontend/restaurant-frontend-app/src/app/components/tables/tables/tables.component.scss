@@ -50,12 +50,8 @@
   @media (min-width: 1024px) {
     display: block;
     background:
-      linear-gradient(
-          rgba(0, 0, 0, 0.2),
-          rgba(0, 0, 0, 0.2)
-      ),
-      url('/assets/img/book-a-table-image.jpg')
-      center center / cover no-repeat;
+      linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+      url('/assets/img/book-a-table-image.jpg') center center / cover no-repeat;
   }
 }
 

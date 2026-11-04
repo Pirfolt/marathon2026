@@ -26,6 +26,7 @@ const SLOT_STEP_MINUTES = 30;
 })
 export class TableCardComponent {
   readonly location = input.required<string>();
+  readonly imageUrl = input('assets/img/table-card-image.jpg');
   readonly date = input.required<string>();
   readonly table = input.required<Table>();
   // @Output() showAllClicked = new EventEmitter<Table>();

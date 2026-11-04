@@ -35,9 +35,7 @@ describe('WaitersService', () => {
       locationIds = response;
     });
 
-    const request = httpTestingController.expectOne(
-      'https://test.api/waiters/waiter-1/location'
-    );
+    const request = httpTestingController.expectOne('https://test.api/waiters/waiter-1/location');
     expect(request.request.method).toBe('GET');
     request.flush({
       locationId: 'location-1',

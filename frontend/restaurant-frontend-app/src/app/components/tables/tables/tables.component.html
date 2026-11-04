@@ -129,9 +129,10 @@
               <app-table-card
                 [table]="table"
                 [location]="getLocationName(table)"
-                [date]="lastAppliedFilter.date!"
-                (timeSlotSelected)="onTimeSlotsClick(table, $event)"
-              />
+              [imageUrl]="getLocationImageUrl(table)"
+              [date]="lastAppliedFilter.date!"
+              (timeSlotSelected)="onTimeSlotsClick(table, $event)"
+            />
             }
           </div>
         </div>
